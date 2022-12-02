@@ -1,8 +1,9 @@
 fun main() {
     fun solve(input: List<String>, n: Int = 1): List<Int> {
         val calHeap = descendingHeap<Int>()
-        input.asSequence().chunkedBy { it.isNotBlank() }
-            .map { it.map { it.toInt() }.sum() }
+        input.asSequence()
+            .chunkedBy { it.isNotBlank() }
+            .map { block -> block.sumOf { it.toInt() } }
             .forEach { calHeap.add(it) }
 
         return (0 until n).map { calHeap.remove() }.toList()
