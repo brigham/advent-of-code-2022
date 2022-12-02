@@ -1,14 +1,66 @@
+enum class Outcome {
+    Loss, Draw, Win;
+
+    val score: Int
+        get() = this.ordinal * 3
+
+    fun against(opp: Piece): Piece {
+        return when (this) {
+            Loss -> opp.beats
+            Draw -> opp
+            Win -> opp.beatenBy
+        }
+    }
+}
+
+enum class Piece {
+    Rock {
+        override val beats: Piece
+            get() = Scissors
+        override val beatenBy: Piece
+            get() = Paper
+    }, Paper {
+        override val beats: Piece
+            get() = Rock
+        override val beatenBy: Piece
+            get() = Scissors
+    }, Scissors {
+        override val beats: Piece
+            get() = Paper
+        override val beatenBy: Piece
+            get() = Rock
+    };
+
+    abstract val beats: Piece
+
+    abstract val beatenBy: Piece
+
+    val score: Int = ordinal + 1
+
+    fun play(other: Piece): Outcome {
+        return when (other) {
+            this -> Outcome.Draw
+            this.beats -> Outcome.Loss
+            this.beatenBy -> Outcome.Win
+            else -> error("Someone added a new piece.")
+        }
+    }
+}
+
+val pieces = mapOf(
+    "A" to Piece.Rock, "X" to Piece.Rock,
+    "B" to Piece.Paper, "Y" to Piece.Paper,
+    "C" to Piece.Scissors, "Z" to Piece.Scissors)
+val outcomes = mapOf("X" to Outcome.Loss, "Y" to Outcome.Draw, "Z" to Outcome.Win)
+
 fun main() {
     fun part1(input: List<String>): Int {
         var score = 0
         for (line in input) {
-            val (opp, me) = line.split(' ')
-            score += when (opp) {
-                "A" -> when (me) { "X" -> 3 "Y" -> 6 "Z" -> 0 else -> -999}
-                "B" -> when (me) { "X" -> 0 "Y" -> 3 "Z" -> 6 else -> -999}
-                "C" -> when (me) { "X" -> 6 "Y" -> 0 "Z" -> 3 else -> -999}
-                else -> -999
-            } + when (me) { "X" -> 1 "Y" -> 2 "Z" -> 3 else -> -999}
+            val (oppC, meC) = line.split(' ')
+            val opp = pieces[oppC]!!
+            val me = pieces[meC]!!
+            score += opp.play(me).score + me.score
         }
         return score
     }
@@ -16,13 +68,10 @@ fun main() {
     fun part2(input: List<String>): Int {
         var score = 0
         for (line in input) {
-            val (opp, me) = line.split(' ')
-            score += when (opp) {
-                "A" -> when (me) { "X" -> 3 "Y" -> 1 "Z" -> 2 else -> -999}
-                "B" -> when (me) { "X" -> 1 "Y" -> 2 "Z" -> 3 else -> -999}
-                "C" -> when (me) { "X" -> 2 "Y" -> 3 "Z" -> 1 else -> -999}
-                else -> -999
-            } + when (me) { "X" -> 0 "Y" -> 3 "Z" -> 6 else -> -999}
+            val (oppC, outcomeC) = line.split(' ')
+            val opp = pieces[oppC]!!
+            val outcome = outcomes[outcomeC]!!
+            score += outcome.score + outcome.against(opp).score
         }
         return score
     }
