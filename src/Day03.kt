@@ -2,38 +2,22 @@ fun main() {
     fun priority(only: Char) = when (only) {
         in 'A'..'Z' -> (only - 'A') + 27
         in 'a'..'z' -> (only - 'a') + 1
-        else -> -999999999
+        else -> error("weird")
+    }
+
+    fun bisect(s: String): Pair<String, String> {
+        val sz = s.length / 2
+        return s.slice(0 until sz) to s.substring(sz)
     }
 
     fun part1(input: List<String>): Int {
-        var result = 0
-        for (line in input) {
-            val sz = line.length
-            val sz2: Int = sz / 2
-            check(sz2 * 2 == sz)
-            val c1 =line.substring(0 until sz2)
-            val c2 = line.substring(sz2)
-            check(c1.length == c2.length)
-            val s1 = c1.toSet()
-            val s2 = c2.toSet()
-            val itr = s1.intersect(s2)
-            check(itr.size == 1)
-            val only = itr.first()
-            result += priority(only)
-        }
-        return result
+        return input.map { bisect(it) }.map { it.first.toSet() to it.second.toSet() }
+            .map { it.first.intersect(it.second).single() }.sumOf { priority(it) }
     }
 
     fun part2(input: List<String>): Int {
-        var result = 0
-        for (lines in input.chunked(3)) {
-            val allIntersections = lines[0].toSet().intersect(lines[1].toSet().intersect(lines[2].toSet()))
-
-            check(allIntersections.size == 1)
-            val only = allIntersections.first()
-            result += priority(only)
-        }
-        return result
+        return input.chunked(3).map { chunk -> chunk.map { it.toSet() }.reduce { a, b -> a.intersect(b) } }
+            .map { it.single() }.sumOf { priority(it) }
     }
 
     // test if implementation meets criteria from the description, like:
