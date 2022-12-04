@@ -1,12 +1,13 @@
 import java.io.File
 import java.math.BigInteger
 import java.security.MessageDigest
-import java.util.PriorityQueue
+import java.util.*
+import kotlin.Comparator
 
 /**
  * Reads lines from the given input txt file.
  */
-fun readInput(name: String) = File("src", "$name.txt")
+fun readInput(name: String) = File("src/main/kotlin", "$name.txt")
     .readLines()
 
 /**
@@ -48,3 +49,21 @@ fun <E : Comparable<E>> descendingHeap(): PriorityQueue<E> {
 fun <E> heap(comparator: Comparator<E>): PriorityQueue<E> {
     return PriorityQueue<E>(comparator)
 }
+
+fun <E : Comparable<E>> min(a: E, b: E): E {
+    return if (a < b) a else b
+}
+
+fun <E : Comparable<E>> max(a: E, b: E): E {
+    return if (a > b) a else b
+}
+
+fun IntRange.overlap(other: IntRange): IntRange? {
+    if (endInclusive < other.first || other.last < start) {
+        return null
+    }
+    return max(start, other.first)..min(endInclusive, other.last)
+}
+
+fun <T, R> Pair<T, T>.map(transform: (T) -> R): Pair<R, R> =
+    transform(first) to transform(second)
