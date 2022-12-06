@@ -23,10 +23,10 @@ fun main() {
                 if (line[i].isWhitespace()) {
                     continue
                 }
-                val create = line[i]
+                val crate = line[i]
                 val which = (i - 1) / 4
                 ensureSize(which + 1)
-                stacks[which].addLast(create)
+                stacks[which].addLast(crate)
             }
             line = lines.next()
         }
@@ -41,22 +41,21 @@ fun main() {
             }
 
             val match = pattern.matcher(line)
-            check(match.matches()) { "no match for ${line}"}
+            check(match.matches()) { "no match for $line"}
             val times = match.group(1).toInt()
-            val from = match.group(2).toInt()
-            val to = match.group(3).toInt()
+            val from = match.group(2).toInt() - 1
+            val to = match.group(3).toInt() - 1
             instructions.add(Instruction(times, from, to))
         }
 
-        return (stacks to instructions)
+        return stacks.toList() to instructions.toList()
     }
 
     fun part1(input: List<String>): String {
         val (stacks, instructions) = parse(input)
         for (instruction in instructions) {
             for (i in 0 until instruction.times) {
-                val crate = checkNotNull(stacks[instruction.from - 1].poll())
-                stacks[instruction.to - 1].addFirst(crate)
+                stacks[instruction.to].push(checkNotNull(stacks[instruction.from].pop()))
             }
         }
         return stacks.map { it.peek() }.joinToString("")
@@ -65,13 +64,12 @@ fun main() {
     fun part2(input: List<String>): String {
         val (stacks, instructions) = parse(input)
         for (instruction in instructions) {
-            val holder = mutableListOf<Char>()
+            val holder = ArrayDeque<Char>(instruction.times)
             for (i in 0 until instruction.times) {
-                val crate = checkNotNull(stacks[instruction.from - 1].poll())
-                holder.add(crate)
+                holder.push(checkNotNull(stacks[instruction.from].pop()))
             }
-            for (crate in holder.reversed()) {
-                stacks[instruction.to - 1].addFirst(crate)
+            while (holder.isNotEmpty()) {
+                stacks[instruction.to].push(holder.pop())
             }
         }
         return stacks.map { it.peek() }.joinToString("")
