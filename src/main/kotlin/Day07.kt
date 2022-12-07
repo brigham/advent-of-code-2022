@@ -20,6 +20,8 @@ class ElfDirectory(
     val parent: ElfDirectory?,
     override val entries: MutableList<ElfEntry> = mutableListOf(),
 ) : ElfEntry {
+    private var sizeCache: Int? = null
+
     fun addDirectory(name: String) {
         entries.add(ElfDirectory(name, this))
     }
@@ -45,7 +47,14 @@ class ElfDirectory(
     }
 
     override val size: Int
-        get() = entries.sumOf { it.size }
+        get() {
+            val curSizeCache = sizeCache
+            return if (curSizeCache != null) curSizeCache else {
+                val toCache = entries.sumOf { it.size }
+                sizeCache = toCache
+                return toCache
+            }
+        }
     override val asFile: ElfFile? = null
     override val asDirectory: ElfDirectory = this
 }
