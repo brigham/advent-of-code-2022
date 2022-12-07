@@ -104,12 +104,14 @@ fun main() {
                         "ls" -> lsMode = true
                     }
                 }
+
                 lsMode -> {
                     when (line[0]) {
                         "dir" -> fs.curdir!!.addDirectory(line[1])
                         else -> fs.curdir!!.addFile(line[1], line[0].toInt())
                     }
                 }
+
                 else -> {
                     error("Unexpected $line")
                 }

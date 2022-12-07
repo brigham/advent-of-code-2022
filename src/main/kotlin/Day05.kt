@@ -41,7 +41,7 @@ fun main() {
             }
 
             val match = pattern.matcher(line)
-            check(match.matches()) { "no match for $line"}
+            check(match.matches()) { "no match for $line" }
             val times = match.group(1).toInt()
             val from = match.group(2).toInt() - 1
             val to = match.group(3).toInt() - 1

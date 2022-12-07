@@ -19,12 +19,14 @@ enum class Piece {
             get() = Scissors
         override val beatenBy: Piece
             get() = Paper
-    }, Paper {
+    },
+    Paper {
         override val beats: Piece
             get() = Rock
         override val beatenBy: Piece
             get() = Scissors
-    }, Scissors {
+    },
+    Scissors {
         override val beats: Piece
             get() = Paper
         override val beatenBy: Piece
@@ -50,7 +52,8 @@ enum class Piece {
 val pieces = mapOf(
     "A" to Piece.Rock, "X" to Piece.Rock,
     "B" to Piece.Paper, "Y" to Piece.Paper,
-    "C" to Piece.Scissors, "Z" to Piece.Scissors)
+    "C" to Piece.Scissors, "Z" to Piece.Scissors
+)
 val outcomes = mapOf("X" to Outcome.Loss, "Y" to Outcome.Draw, "Z" to Outcome.Win)
 
 fun main() {
