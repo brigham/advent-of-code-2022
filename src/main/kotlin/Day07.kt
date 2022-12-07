@@ -1,35 +1,53 @@
-interface SizeHaver {
+private val ElfDirectory.dirs: Sequence<ElfDirectory>
+    get() = entries.asSequence().mapNotNull { it.asDirectory }
+
+interface ElfEntry {
+    val name: String
     val size: Int
+    val entries: List<ElfEntry>
+    val asFile: ElfFile?
+    val asDirectory: ElfDirectory?
 }
 
-data class ElfFile(val name: String, override val size: Int) : SizeHaver
+data class ElfFile(override val name: String, override val size: Int, override val entries: List<ElfEntry> = listOf()) :
+    ElfEntry {
+    override val asFile: ElfFile = this
+    override val asDirectory: ElfDirectory? = null
+}
 
-class ElfDirectory(val name: String, val parent: ElfDirectory?, val dirs: MutableList<ElfDirectory> = mutableListOf(), val files: MutableList<ElfFile> = mutableListOf()) : SizeHaver {
+class ElfDirectory(
+    override val name: String,
+    val parent: ElfDirectory?,
+    override val entries: MutableList<ElfEntry> = mutableListOf(),
+) : ElfEntry {
     fun addDirectory(name: String) {
-        dirs.add(ElfDirectory(name, this))
+        entries.add(ElfDirectory(name, this))
     }
 
     fun getDirectory(name: String): ElfDirectory {
-        return dirs.filter { it.name == name }.first()
+        return entries.mapNotNull { it.asDirectory }.first { it.name == name }
     }
 
     fun addFile(name: String, size: Int) {
-        files.add(ElfFile(name, size))
+        entries.add(ElfFile(name, size))
+    }
+
+    fun walk(consumer: (dir: ElfDirectory) -> Unit) {
+        val q = ArrayDeque<ElfDirectory>()
+        q.add(this)
+        while (q.isNotEmpty()) {
+            val dir = q.removeFirst()
+            consumer(dir)
+            for (other in dir.dirs) {
+                q.add(other)
+            }
+        }
     }
 
     override val size: Int
-        get() {
-            var result = 0
-            for (dir in dirs) {
-                result += dir.size
-            }
-            for (file in files) {
-                result += file.size
-            }
-            return result
-        }
-
-
+        get() = entries.sumOf { it.size }
+    override val asFile: ElfFile? = null
+    override val asDirectory: ElfDirectory = this
 }
 
 class ElfFilesystem(var root: ElfDirectory = ElfDirectory("", null), var curdir: ElfDirectory? = null) {
@@ -48,6 +66,12 @@ class ElfFilesystem(var root: ElfDirectory = ElfDirectory("", null), var curdir:
     }
 }
 
+private const val TOTAL_SIZE = 70000000
+
+private const val DESIRED_FREE_SPACE = 30000000
+
+private const val PART1_MAX_SIZE = 100000
+
 fun main() {
     fun parse(input: List<String>): ElfFilesystem {
         val iter = input.iterator()
@@ -55,23 +79,28 @@ fun main() {
         var lsMode = false
         while (iter.hasNext()) {
             val line = iter.next().split(' ')
-            if (line[0] == "$") {
-                lsMode = false
-                when (line[1]) {
-                    "cd" -> when (line[2]) {
-                        ".." -> fs.ascend()
-                        "/" -> fs.gotoRoot()
-                        else -> fs.descend(line[2])
+            when {
+                line[0] == "$" -> {
+                    lsMode = false
+                    when (line[1]) {
+                        "cd" -> when (line[2]) {
+                            ".." -> fs.ascend()
+                            "/" -> fs.gotoRoot()
+                            else -> fs.descend(line[2])
+                        }
+
+                        "ls" -> lsMode = true
                     }
-                    "ls" -> lsMode = true
                 }
-            } else if (lsMode) {
-                when (line[0]) {
-                    "dir" -> fs.curdir!!.addDirectory(line[1])
-                    else -> fs.curdir!!.addFile(line[1], line[0].toInt())
+                lsMode -> {
+                    when (line[0]) {
+                        "dir" -> fs.curdir!!.addDirectory(line[1])
+                        else -> fs.curdir!!.addFile(line[1], line[0].toInt())
+                    }
                 }
-            } else {
-                error("Unexpected $line")
+                else -> {
+                    error("Unexpected $line")
+                }
             }
         }
         return fs
@@ -79,17 +108,11 @@ fun main() {
 
     fun part1(input: List<String>): Int {
         val fs = parse(input)
-        val q = ArrayDeque<ElfDirectory>()
-        q.add(fs.root)
         var result = 0
-        while (q.isNotEmpty()) {
-            val dir = q.removeFirst()
-            val size = dir.size
-            if (size <= 100000) {
+        fs.root.walk {
+            val size = it.size
+            if (size <= PART1_MAX_SIZE) {
                 result += size
-            }
-            for (other in dir.dirs) {
-                q.add(other)
             }
         }
         return result
@@ -98,18 +121,12 @@ fun main() {
     fun part2(input: List<String>): Int {
         val fs = parse(input)
         val rootSize = fs.root.size
-        val freespace = 70000000 - rootSize
-        val q = ArrayDeque<ElfDirectory>()
-        q.add(fs.root)
+        val freespace = TOTAL_SIZE - rootSize
         var result = rootSize
-        while (q.isNotEmpty()) {
-            val dir = q.removeFirst()
-            val size = dir.size
-            if (size < result && size + freespace >= 30000000) {
+        fs.root.walk {
+            val size = it.size
+            if (size < result && size + freespace >= DESIRED_FREE_SPACE) {
                 result = size
-            }
-            for (other in dir.dirs) {
-                q.add(other)
             }
         }
         return result
