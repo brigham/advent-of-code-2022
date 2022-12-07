@@ -1,14 +1,16 @@
 fun main() {
     fun part1(input: List<String>): Int {
         val line = input[0]
-        return line.windowed(4, 1)
+        return line
+            .windowedSequence(4, 1)
             .mapIndexed { index, s -> if (s.toSet().size == 4) index + 4 else null }
             .filterNotNull().first()
     }
 
     fun part2(input: List<String>): Int {
         val line = input[0]
-        return line.windowed(14, 1)
+        return line
+            .windowedSequence(14, 1)
             .mapIndexed { index, s -> if (s.toSet().size == 14) index + 14 else null }
             .filterNotNull().first()
     }
