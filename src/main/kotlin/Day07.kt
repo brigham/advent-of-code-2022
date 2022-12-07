@@ -1,6 +1,9 @@
 private val ElfDirectory.dirs: Sequence<ElfDirectory>
     get() = entries.asSequence().mapNotNull { it.asDirectory }
 
+fun ElfDirectory.getDirectory(name: String): ElfDirectory =
+    dirs.first { it.name == name }
+
 interface ElfEntry {
     val name: String
     val size: Int
@@ -22,15 +25,15 @@ class ElfDirectory(
 ) : ElfEntry {
     private var sizeCache: Int? = null
 
+    private fun hasEntry(name: String): Boolean = entries.any { it.name == name }
+
     fun addDirectory(name: String) {
+        check(!hasEntry(name))
         entries.add(ElfDirectory(name, this))
     }
 
-    fun getDirectory(name: String): ElfDirectory {
-        return entries.mapNotNull { it.asDirectory }.first { it.name == name }
-    }
-
     fun addFile(name: String, size: Int) {
+        check(!hasEntry(name))
         entries.add(ElfFile(name, size))
     }
 
