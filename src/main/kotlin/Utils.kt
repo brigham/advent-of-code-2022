@@ -1,8 +1,5 @@
 import java.io.File
-import java.math.BigInteger
-import java.security.MessageDigest
 import java.util.*
-import kotlin.Comparator
 
 /**
  * Reads lines from the given input txt file.
@@ -11,12 +8,9 @@ fun readInput(name: String) = File("src/main/kotlin", "$name.txt")
     .also { it.createNewFile() }
     .readLines()
 
-/**
- * Converts string to md5 hash.
- */
-fun String.md5() = BigInteger(1, MessageDigest.getInstance("MD5").digest(toByteArray()))
-    .toString(16)
-    .padStart(32, '0')
+fun slurp(name: String): String = File("src/main/kotlin", "$name.txt")
+    .also { it.createNewFile() }
+    .readText()
 
 fun <E> Sequence<E>.chunkedBy(predicate: (E) -> Boolean): Sequence<List<E>> {
     val outer = this
