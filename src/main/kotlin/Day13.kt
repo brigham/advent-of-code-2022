@@ -1,3 +1,5 @@
+import kotlinx.serialization.json.*
+
 sealed class Packet: Comparable<Packet>
 
 data class ListPacket(val contents: List<Packet>): Packet() {
@@ -35,40 +37,20 @@ data class ValPacket(val number: Int): Packet() {
 }
 
 fun main() {
-    fun parse(input: String, offset: MutableList<Int>): Packet {
-        val ch = input[offset[0]]
-        when (ch) {
-            '[' -> {
-                offset[0]++
-                val contents = mutableListOf<Packet>()
-                while (input[offset[0]] != ']') {
-                    contents.add(parse(input, offset))
-                    if (input[offset[0]] == ']') {
-                        continue
-                    }
-                    check(input[offset[0]] == ',')
-                    offset[0]++
-                }
-                offset[0]++
-                return ListPacket(contents)
-            }
-            in '0'..'9' -> {
-                var pos = offset[0]
-                while (input[pos].isDigit()) {
-                    pos++
-                }
-                val num = ValPacket(input.slice(offset[0] until pos).toInt())
-                offset[0] = pos
-                return num
-            }
-            else -> error("Bad ch: $ch")
+    fun parse(tree: JsonElement): Packet {
+        return when (tree) {
+            is JsonArray -> ListPacket(tree.asSequence().map { parse(it) }.toList())
+            is JsonPrimitive -> ValPacket(tree.int)
+            else -> error("only support nested arrays of number")
         }
     }
 
     fun parse(input: List<String>): List<Pair<Packet, Packet>> {
         val results = mutableListOf<Pair<Packet, Packet>>()
         for ((one, two, blank) in input.chunked(3)) {
-            results.add(parse(one, mutableListOf(0)) to parse(two, mutableListOf(0)))
+            val treeOne = Json.parseToJsonElement(one)
+            val treeTwo = Json.parseToJsonElement(two)
+            results.add(parse(treeOne) to parse(treeTwo))
             check(blank.isBlank())
         }
         return results.toList()
@@ -86,8 +68,8 @@ fun main() {
     }
 
     fun part2(input: List<String>): Int {
-        val dp1 = parse("[[2]]", mutableListOf(0))
-        val dp2 = parse("[[6]]", mutableListOf(0))
+        val dp1 = parse(Json.parseToJsonElement("[[2]]"))
+        val dp2 = parse(Json.parseToJsonElement("[[6]]"))
         val allPackets = parse(input).flatMap { it.toList() } + listOf(dp1, dp2)
         val sorted = allPackets.sorted()
         return (sorted.indexOf(dp1) + 1) * (sorted.indexOf(dp2) + 1)
