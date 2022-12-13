@@ -1,5 +1,6 @@
 import java.io.File
 import java.util.*
+import kotlin.collections.ArrayDeque
 
 /**
  * Reads lines from the given input txt file.
@@ -62,3 +63,26 @@ fun IntRange.overlap(other: IntRange): IntRange? {
 
 fun <T, R> Pair<T, T>.map(transform: (T) -> R): Pair<R, R> =
     transform(first) to transform(second)
+
+// Graphs
+data class GraphNode<N>(val steps: Int, val value: N)
+
+fun <N> bfs(vararg start: N, next: (N) -> Sequence<N>, found: (N) -> Boolean): GraphNode<N>? {
+    val q = ArrayDeque<GraphNode<N>>()
+    val seen = mutableSetOf<N>()
+    q.addAll(start.map { GraphNode(0, it) })
+    while (q.isNotEmpty()) {
+        val nextNode = q.removeFirst()
+        if (nextNode.value in seen) {
+            continue
+        }
+        seen.add(nextNode.value)
+        if (found(nextNode.value)) {
+            return nextNode
+        }
+        for (it in next(nextNode.value)) {
+            q.add(GraphNode(nextNode.steps + 1, it))
+        }
+    }
+    return null
+}
